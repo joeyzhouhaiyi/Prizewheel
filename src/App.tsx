@@ -1,26 +1,21 @@
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import QRScanner from './QRScanner';
+import PrizeWheel from './PrizeWheel';
 
-function App() {
+const App: React.FC = () => {
+  const segments = [
+    { fillStyle: '#eae56f', text: 'Prize One' },
+    { fillStyle: '#89f26e', text: 'Prize Two' },
+    { fillStyle: '#7de6ef', text: 'Prize Three' },
+    { fillStyle: '#e7706f', text: 'Prize Four' },
+  ];
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <h1>QR Code Scanner App</h1>
+      <QRScanner />
     </div>
   );
-}
+};
 
 export default App;
