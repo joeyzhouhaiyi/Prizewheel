@@ -9,6 +9,7 @@ const QRScanner: React.FC = () => {
 
   useEffect(() => {
     const reader = new BrowserMultiFormatReader();
+    let scanning = true;
 
     const scan = async () => {
       try {
@@ -18,15 +19,21 @@ const QRScanner: React.FC = () => {
             { video: { facingMode: 'environment' } },
             videoElement,
             (result, error) => {
-              if (result) {
+              if (result && scanning) {
                 const scannedCode = result.getText();
                 setQrCode(scannedCode);
+
                 if (scannedCode === 'T1') {
+                  scanning = false; // Prevent multiple spins for the same QR code.
                   wheelRef.current?.spin();
+                  setTimeout(() => {
+                    scanning = true; // Re-enable scanning after the spin.
+                  }, 5000); // Adjust timing based on spin duration.
                 }
               }
-              if (error) {
-                console.error("Scanning error:", error);
+              if (error && !(error instanceof Error)) {
+                // Handle scanning issues without flooding the console.
+                console.debug("Scanning in progress...");
               }
             }
           );
@@ -44,17 +51,34 @@ const QRScanner: React.FC = () => {
   }, []);
 
   const segments = [
-    { fillStyle: '#eae56f', text: 'Prize One' },
-    { fillStyle: '#89f26e', text: 'Prize Two' },
-    { fillStyle: '#7de6ef', text: 'Prize Three' },
-    { fillStyle: '#e7706f', text: 'Prize Four' },
+    { fillStyle: '#eae56f', text: 'Prize 1' },
+    { fillStyle: '#89f26e', text: 'Prize 2' },
+    { fillStyle: '#7de6ef', text: 'Prize 3' },
+    { fillStyle: '#e7706f', text: 'Prize 4' },
+
   ];
+  
+  const spinWheel = () => {
+    if (wheelRef.current) {
+      wheelRef.current.spin();
+    }
+  };
 
   return (
     <div>
       <h2>QR Code Scanner</h2>
-      <video ref={videoRef} />
-      <p>Scanned QR Code: {qrCode}</p>
+      <video
+        ref={videoRef}
+        style={{
+          width: '100%',
+          maxWidth: '480px',
+          border: '1px solid #ccc',
+          borderRadius: '8px',
+        }}
+        autoPlay
+        playsInline
+      />
+      <p>Scanned QR Code: {qrCode || 'None'}</p>
       <PrizeWheel ref={wheelRef} segments={segments} />
     </div>
   );
