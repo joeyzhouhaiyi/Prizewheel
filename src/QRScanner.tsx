@@ -1,29 +1,33 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { BrowserMultiFormatReader } from '@zxing/library';
-import PrizeWheel, { PrizeWheelRef } from './PrizeWheel';
 
-const QRScanner: React.FC = () => {
-  const [qrCode, setQrCode] = useState<string>('');
+interface QRScannerProps {
+  onScan: (code: string) => void;
+  isWheelSpinning: boolean;
+}
+
+const QRScanner: React.FC<QRScannerProps> = ({ onScan, isWheelSpinning }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const wheelRef = useRef<PrizeWheelRef>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const readerRef = useRef<BrowserMultiFormatReader | null>(null);
 
   useEffect(() => {
-    const reader = new BrowserMultiFormatReader();
+    readerRef.current = new BrowserMultiFormatReader();
 
     const scan = async () => {
+      if (isWheelSpinning || !isScanning) return;
+
       try {
         const videoElement = videoRef.current;
-        if (videoElement) {
-          await reader.decodeFromConstraints(
+        if (videoElement && readerRef.current) {
+          await readerRef.current.decodeFromConstraints(
             { video: { facingMode: 'environment' } },
             videoElement,
             (result, error) => {
               if (result) {
                 const scannedCode = result.getText();
-                setQrCode(scannedCode);
-                if (scannedCode === 'T1') {
-                  wheelRef.current?.spin();
-                }
+                console.log("code:" + scannedCode);
+                onScan(scannedCode);
               }
               if (error) {
                 console.error("Scanning error:", error);
@@ -36,28 +40,35 @@ const QRScanner: React.FC = () => {
       }
     };
 
-    scan();
+    if (!isWheelSpinning) {
+      setIsScanning(true);
+      scan(); // Start scanning immediately
+    } else {
+      setIsScanning(false);
+      if (readerRef.current) {
+        readerRef.current.reset();
+      }
+    }
 
     return () => {
-      reader.reset();
+      if (readerRef.current) {
+        readerRef.current.reset();
+      }
     };
-  }, []);
-
-  const segments = [
-    { fillStyle: '#eae56f', text: 'Prize One' },
-    { fillStyle: '#89f26e', text: 'Prize Two' },
-    { fillStyle: '#7de6ef', text: 'Prize Three' },
-    { fillStyle: '#e7706f', text: 'Prize Four' },
-  ];
+  }, [onScan, isWheelSpinning, isScanning]);
 
   return (
     <div>
-      <h2>QR Code Scanner</h2>
-      <video ref={videoRef} />
-      <p>Scanned QR Code: {qrCode}</p>
-      <PrizeWheel ref={wheelRef} segments={segments} />
+
+      <video ref={videoRef} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
     </div>
   );
 };
 
 export default QRScanner;
+
+/**
+ *       {isWheelSpinning ? (
+        <p>Wheel is spinning. QR scanning paused.</p>
+      ) : null}
+ */
